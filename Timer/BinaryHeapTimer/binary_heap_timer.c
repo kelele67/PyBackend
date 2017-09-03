@@ -55,12 +55,61 @@ int bf_find_timer() {
 	return time;
 }
 
+//终止timer
+//bf_handle_expire_timers
 void bf_handle_expire_timers() {
-	bf_timer_node *timer_node;
-	int ret;
+    bf_debug("in bf_handle_expire_timers");
+    bf_timer_node *timer_node;
+    int ret;
 
-	while (!bf_pq_is_empty(&bf_timer)) {
-		bf_timer_update();
-		timer_node = (bf_timer_node *)bf_pq_min(&bf_timer)
-	}
+    while (!bf_pq_is_empty(&bf_timer)) {
+        bf_debug("bf_handle_expore_timers, size = %zu", bf_pq_size(&bf_timer));
+        bf_time_update();
+        timer_node = (bf_timer_node *)bf_pq_min(&bf_timer);
+        check(timer_node != NULL, "bf_pq_min error");
+
+        if (timer_node->deleted) {
+            ret = bf_pq_delmin(&bf_timer);
+            check(ret == 0, "bf_handle_expire_timers : bf_pq_delmin error");
+            free(timer_node);
+            continue;
+        }
+
+        if (timer_node->key > bf_current_msec) {
+            return;
+        }
+
+        if (timer_node->handler) {
+            timer_node->handler(timer_node->rq);
+        }
+        ret = bf_pq_delmin(&bf_timer);
+        check(ret == 0, "bf_handle_expire_timers: bf_pq_delmin error");
+        free(timer_node);
+    }
+}
+
+void bf_add_timer(bf_request_t *rq, size_t timeout, timer_handler_pt handler) {
+    int ret;
+    bf_timer_node *timer_node = (bf_timer_node *)malloc(sizeof(bf_timer_node));
+    check(timer_node != NULL, "bf_add_timer : malloc error");
+
+    bf_time_update();
+    rq->timer = timer_node;
+    timer_node->key = bf_current_msec + timeout;
+    bf_debug("in bf_add_timer, key = %zu", timer_node->key);
+    timer_node->deleted = 0;
+    timer_node->handler = handler;
+    timer_node->rq = rq;
+
+    ret = bf_pq_insert(&bf_timer, timer_node);
+    check(ret == 0, "bf_add_timer: bf_pq_insert error");
+}
+
+void bf_del_timer(bf_request_t *rq) {
+    bf_debug("in bf_del_timer");
+    bf_time_update();
+    bf_timer_node *timer_node = rq->timer;
+    check(timer_node != NULL, "bf_del_timer : rq->timer is NULL");
+
+    timer_node->deleted = 1;
 }
