@@ -2,8 +2,6 @@
 
 python 的后端开发学习
 
-learn from [峰云就她了的BLOG](http://xiaorui.cc/)
-
 ## Timer
 
 * EpollfdTimer
@@ -16,3 +14,5 @@ learn from [峰云就她了的BLOG](http://xiaorui.cc/)
 * Nginx Reverse Proxy
 
 ## Redis
+
+learn from [峰云就她了的BLOG](http://xiaorui.cc/)

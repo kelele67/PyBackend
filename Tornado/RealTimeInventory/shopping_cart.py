@@ -72,10 +72,11 @@ class StatusHandler(tornado.web.RequestHandler):
         # 注册了一个带有购物车控制器的回调函数
         # 使用self.async_callback包住回调函数以确保回调函数中引发的异常不会使RequestHandler关闭连接
         # 然而在1.1之后的版本，这不再是显示必须的了
-        self.application.ShoppingCart.register(self.async_callback(self.on_message))
+        # self.application.ShoppingCart.register(self.async_callback(self.on_message))
+        self.application.ShoppingCart.register(self.on_message)
 
     def on_message(self, count):
-        self.write('{"inventoryCount":"%d"' % count)
+        self.write('{"inventoryCount":"%d"}' % count)
         self.finish()
 
 class Application(tornado.web.Application):
