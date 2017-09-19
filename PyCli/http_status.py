@@ -45,7 +45,7 @@ curl_format = """{
 "time_pretransfer": %{time_pretransfer},
 "time_predirect": %{time_redirect},
 "time_starttransfer": %{time_starttransfer},
-"time_toral": %{time_total},
+"time_total": %{time_total},
 "speed_download": %{speed_download},
 "speed_upload": %{speed_upload},
 "remote_ip": "%{remote_ip}",
@@ -117,101 +117,102 @@ def main():
         print_help()
         quit(None, 0)
 
-        # get envs
-        show_body = 'true' in ENV_SHOW_BODY.get('false').lower()
-        show_ip = 'true' in ENV_SHOW_IP.get('false').lower()
-        show_speed = 'true' in ENV_SHOW_SPEED.get('false').lower()
-        save_body = 'true' in ENV_SAVE_BODY.get('false').lower()
-        curl_bin = ENV_CURL_BIN.get('curl')
-        is_debug = 'true' in ENV_DEBUG.get('false').lower()
+    # get envs
+    show_body = 'true' in ENV_SHOW_BODY.get('false').lower()
+    show_ip = 'true' in ENV_SHOW_IP.get('false').lower()
+    show_speed = 'true' in ENV_SHOW_SPEED.get('false').lower()
+    save_body = 'true' in ENV_SAVE_BODY.get('false').lower()
+    curl_bin = ENV_CURL_BIN.get('curl')
+    is_debug = 'true' in ENV_DEBUG.get('false').lower()
 
-        # configure logging
-        if is_debug:
-            log_level = logging.DEBUG
-        else:
-            log_level = logging.INFO
-        logging.basicConfig(level=log_level)
-        lg = logging.getLogger('httpstat')
+    # configure logging
+    if is_debug:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+    logging.basicConfig(level=log_level)
+    lg = logging.getLogger('httpstat')
 
-        # log envs
-        lg.debug('Env:\n%s', '\n'.join('  {}={}'.format(i.key, i.get('')) for i in Env._instances))
-        lg.debug('Flags: %s', dict(
-            show_body=show_body,
-            show_ip=show_ip,
-            show_speed=show_speed,
-            save_body=save_body,
-            curl_bin=curl_bin,
-            is_debug=is_debug,
-        ))
+    # log envs
+    lg.debug('Env:\n%s', '\n'.join('  {}={}'.format(i.key, i.get('')) for i in Env._instances))
+    lg.debug('Flags: %s', dict(
+        show_body=show_body,
+        show_ip=show_ip,
+        show_speed=show_speed,
+        save_body=save_body,
+        curl_bin=curl_bin,
+        is_debug=is_debug,
+    ))
 
-        # get url
-        url = args[0]
-        if url in ['-h', '--help']:
-            print_help()
-            quit(None, 0)
-        elif url == '--version':
-            print('httpstat {}'.format(__version__))
-            quit(None, 0)
+    # get url
+    url = args[0]
+    if url in ['-h', '--help']:
+        print_help()
+        quit(None, 0)
+    elif url == '--version':
+        print('httpstat {}'.format(__version__))
+        quit(None, 0)
 
-        curl_args = args[1:]
+    curl_args = args[1:]
 
-        # check curl args
-        exclude_options = [
-            '-w', '--write-out',
-            '-D', '--dump-header',
-            '-o', '--output',
-            '-s', '--silent',
-        ]
-        for i in exclude_options:
-            if i in curl_args:
-                quit('Error: {} is not allowed in extra curl args'.format(i), 1)
+    # check curl args
+    exclude_options = [
+        '-w', '--write-out',
+        '-D', '--dump-header',
+        '-o', '--output',
+        '-s', '--silent',
+    ]
+    for i in exclude_options:
+        if i in curl_args:
+            quit('Error: {} is not allowed in extra curl args'.format(i), 1)
 
-        # tempfile for output
-        bodyf = tempfile.NamedTemporaryFile(delete=False)
-        bodyf.close()
+    # tempfile for output
+    bodyf = tempfile.NamedTemporaryFile(delete=False)
+    bodyf.close()
 
-        headerf = tempfile.NamedTemporaryFile(delete=False)
-        headerf.close()
+    headerf = tempfile.NamedTemporaryFile(delete=False)
+    headerf.close()
 
-        #run cmd
-        cmd_env = os.environ.copy()
-        # 去除所有本地化的设置
-        cmd_env.update(
-            LC_ALL='C'
-        )
-        cmd_core = [curl_bin, '-w', curl_format, '-D', headerf.name, '-o', bodyf.name, '-s', '-S']
-        cmd = cmd_core + curl_args + [url]
-        lg.debug('cmd: %s', cmd)
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=cmd_env)
-        out, err = p.communicate()
-        if PY3:
-            out, err = out.decode(), err.decode()
-        lg.debug('out: %s', out)
+    #run cmd
+    cmd_env = os.environ.copy()
+    # 去除所有本地化的设置
+    cmd_env.update(
+        LC_ALL='C'
+    )
+    cmd_core = [curl_bin, '-w', curl_format, '-D', headerf.name, '-o', bodyf.name, '-s', '-S']
+    cmd = cmd_core + curl_args + [url]
+    lg.debug('cmd: %s', cmd)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=cmd_env)
+    out, err = p.communicate()
+    if PY3:
+        out, err = out.decode(), err.decode()
+    lg.debug('out: %s', out)
 
-        # print stderr
-        if p.returncode == 0:
-            if err:
-                print(err)
-        else:
-            _cmd = list(cmd)
-            _cmd[2] = '<output-format>'
-            _cmd[4] = '<tempfile>'
-            _cmd[6] = '<tempfile>'
-            print('> {}'.format(' '.join(_cmd)))
-            quit('curl error: {}'.format(err), p.returncode)
+    # print stderr
+    if p.returncode == 0:
+        if err:
+            print(err)
+    else:
+        _cmd = list(cmd)
+        _cmd[2] = '<output-format>'
+        _cmd[4] = '<tempfile>'
+        _cmd[6] = '<tempfile>'
+        print('> {}'.format(' '.join(_cmd)))
+        quit('curl error: {}'.format(err), p.returncode)
 
-        # parse output
-        try:
-            d = json.loads(out)
-        except ValueError as e:
-            print('Could not decode json: {}'.format(e))
-            print('curl result:', p.returncode, out, err)
-            quit(None, 1)
-        for k in d:
-            if k.startswith('time_'):
-                d[k] = int(d[k] * 1000)
+    # parse output
+    try:
+        d = json.loads(out)
+    except ValueError as e:
+        print('Could not decode json: {}'.format(e))
+        print('curl result:', p.returncode, out, err)
+        quit(None, 1)
+    for k in d:
+        if k.startswith('time_'):
+            d[k] = int(d[k] * 1000)
 
     # calculate ranges
+    # print (d)
     d.update(
         range_dns=d['time_namelookup'],
         range_connection=d['time_connect'] - d['time_namelookup'],
@@ -233,7 +234,7 @@ def main():
     with open(headerf.name, 'r') as f:
         headers = f.read().strip()
     # remove header file
-    lg.debug('rm header file %s', header.name)
+    lg.debug('rm header file %s', headerf.name)
     os.remove(headerf.name)
 
     for loop, line in enumerate(headers.split('\n')):
@@ -307,4 +308,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

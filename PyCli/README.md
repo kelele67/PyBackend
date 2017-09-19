@@ -9,7 +9,7 @@ python command_line tools
 examples:
 ![]()
 
-## http_state
+## http_status
 
 from [reorx](https://raw.githubusercontent.com/reorx/httpstat/master/httpstat.py)
 
