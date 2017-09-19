@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
+Tornaria
 Simple asynchronous HTTP proxy with tunnelling (CONNECT).
 
 GET/POST proxying based on
@@ -9,6 +10,7 @@ import logging
 import os
 import re
 import socket
+# from urllib import parse as urlparse
 from urlparse import urlparse
 
 import tornado.httpserver
@@ -190,7 +192,7 @@ class ProxyHandler(tornado.web.RequestHandler):
             self.finish()
 
         def start_proxy_tunnel():
-            upstream.write('CONNECT %s HTTP/1.1\r\n', % self.request.uri)
+            upstream.write('CONNECT %s HTTP/1.1\r\n' % self.request.uri)
             upstream.wirte('Host: %s\r\n' % self.request.rui)
             upstream.write('Proxy-Connection: Keep-Alive\r\n\r\n')
             upstream.read_until('\r\n\r\n', on_proxy_response)
